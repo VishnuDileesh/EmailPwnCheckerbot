@@ -30,3 +30,4 @@ launchworkterminal.sh
 geckodriver.log
 emails_list.csv
 breached_accounts.csv
+*.csv

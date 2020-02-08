@@ -91,10 +91,10 @@ def checkpwn(emails_file):
 
 header = ['id', 'email', 'appeared', 'breaches', 'date', 'compromised']
 
-def create_breached_csv():
+def create_breached_csv(output_file):
 
 
-    with open('breached_accounts.csv', 'wt') as f:
+    with open(output_file, 'wt') as f:
 
         csv_writer = csv.writer(f)
 
@@ -138,7 +138,9 @@ def create_breached_csv():
 
             csv_writer.writerow(row)
 
-
+    print("Breached accounts details have been saved to : ", output_file)
+    
+ 
 
 
 if len(sys.argv) == 2:
@@ -147,11 +149,26 @@ if len(sys.argv) == 2:
 
     checkpwn(emails_list_file)
 
-    create_breached_csv()
+    output_file = 'breached_accounts.csv'
+
+    create_breached_csv(output_file)
+
+elif len(sys.argv) == 3:
+
+    emails_list_file = sys.argv[1]
+
+    checkpwn(emails_list_file)
+
+    output_file = sys.argv[2]
+
+    create_breached_csv(output_file)
+
 
 else:
 
-    print("Please run the script with the file path of emails list csv file")
+    print("Please run the script with input csv file path and the optional output csv file path as arguments")
+
+    print("python3 script.py emails_list.csv breached_accounts.csv")
 
 
 
