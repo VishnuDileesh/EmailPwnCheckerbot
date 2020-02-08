@@ -4,6 +4,7 @@ from selenium.common.exceptions import NoSuchElementException
 import time
 import re
 import csv
+import sys
 
 
 #employees = ['test@test.com', 'test@mail.com', 'email@test.com', 'test@tester.com', 'tested@test.com']
@@ -11,76 +12,146 @@ import csv
 breached_accounts = {}
 
 
-with open('emails_list.csv', 'rt') as emails:
-    csv_reader = csv.reader(emails)
-
-    next(csv_reader) # skip the heading
-
-    for line in csv_reader:
-#        print(line[1])
-        employee = line[1]
+def checkpwn(emails_file):
 
 
-        #print(employees.index(employee))
+    with open(emails_list_file, 'rt') as emails:
+        csv_reader = csv.reader(emails)
 
-        driver = webdriver.Firefox()
+        next(csv_reader) # skip the heading
 
-        driver.get('https://monitor.firefox.com')
-
-        time.sleep(2)
-
-        email_field = driver.find_element_by_id("scan-email")
-
-        email_field.send_keys(employee)
-
-        button = driver.find_element_by_xpath("/html/body/main/section/div/form/div[2]/input")
-
-        button.click()
-
-        time.sleep(2)
-
-        breach_number = driver.find_element_by_xpath("/html/body/main/div[1]/div/h2/span")
-
-        breach_number = breach_number.get_attribute('innerHTML')
-
-        index = line[0]
+        for line in csv_reader:
+#           print(line[1])
+            employee = line[1]
 
 
-        if int(breach_number) > 0:
-            breaches_title = driver.find_elements_by_class_name("breach-title")
+            #print(employees.index(employee))
 
-            breaches_value = driver.find_elements_by_class_name("breach-value")
+            driver = webdriver.Firefox()
 
-            breached_accounts[index] = {}
-            breached_accounts[index]['Email'] = employee
-            breached_accounts[index]['Appeared'] =  breach_number
+            driver.get('https://monitor.firefox.com')
 
-            breached_accounts[index]['Breaches'] = []
+            time.sleep(2)
 
-            for breach_title in breaches_title:
-                title = breach_title.get_attribute('innerHTML')
-                breached_accounts[index]['Breaches'].append(title)
-                #print(breach_title.get_attribute('innerHTML'))
+            email_field = driver.find_element_by_id("scan-email")
 
+            email_field.send_keys(employee)
 
-            breach_date = breaches_value[0].get_attribute('innerHTML')
+            button = driver.find_element_by_xpath("/html/body/main/section/div/form/div[2]/input")
 
-            breached_accounts[index]['Date'] = breach_date
+            button.click()
 
-            compromised_values = breaches_value[1].get_attribute('innerHTML')
+            time.sleep(2)
 
-            breached_accounts[index]['Compromised'] = []
+            breach_number = driver.find_element_by_xpath("/html/body/main/div[1]/div/h2/span")
 
-            compromised_datas = compromised_values.split(",")
+            breach_number = breach_number.get_attribute('innerHTML')
 
-            for compromised in compromised_datas:
-
-                breached_accounts[index]['Compromised'].append(compromised)
+            index = line[0]
 
 
+            if int(breach_number) > 0:
+                breaches_title = driver.find_elements_by_class_name("breach-title")
+
+                breaches_value = driver.find_elements_by_class_name("breach-value")
+
+                breached_accounts[index] = {}
+                breached_accounts[index]['Email'] = employee
+                breached_accounts[index]['Appeared'] =  breach_number
+
+                breached_accounts[index]['Breaches'] = []
+
+                for breach_title in breaches_title:
+                    title = breach_title.get_attribute('innerHTML')
+                    breached_accounts[index]['Breaches'].append(title)
+                    #print(breach_title.get_attribute('innerHTML'))
 
 
-        driver.quit()
+                breach_date = breaches_value[0].get_attribute('innerHTML')
+
+                breached_accounts[index]['Date'] = breach_date
+
+                compromised_values = breaches_value[1].get_attribute('innerHTML')
+
+                breached_accounts[index]['Compromised'] = []
+
+                compromised_datas = compromised_values.split(",")
+
+                for compromised in compromised_datas:
+
+                    breached_accounts[index]['Compromised'].append(compromised)
+
+
+
+
+            driver.quit()
+
+
+
+
+header = ['id', 'email', 'appeared', 'breaches', 'date', 'compromised']
+
+def create_breached_csv():
+
+
+    with open('breached_accounts.csv', 'wt') as f:
+
+        csv_writer = csv.writer(f)
+
+        csv_writer.writerow(header) # write header
+
+        for ba, ba_info in breached_accounts.items():
+
+            row = []
+
+            # append id
+            row.append(ba)
+
+            # append email
+            row.append(ba_info['Email'])
+
+            # append appeared
+            row.append(ba_info['Appeared'])
+
+
+            # append breaches
+
+            breaches_list = ba_info['Breaches']
+
+            #print(str(breaches_list)[1:-1])
+
+            breaches_list = str(breaches_list)[1:-1]
+
+            row.append(breaches_list)
+
+
+            # append date
+            row.append(ba_info['Date'])
+
+            # append compromised
+
+            compromised_lists = ba_info['Compromised']
+
+            compromised_lists = str(compromised_lists)[1:-1]
+
+            row.append(compromised_lists)
+
+            csv_writer.writerow(row)
+
+
+
+
+if len(sys.argv) == 2:
+
+    emails_list_file = sys.argv[1]
+
+    checkpwn(emails_list_file)
+
+    create_breached_csv()
+
+else:
+
+    print("Please run the script with the file path of emails list csv file")
 
 
 
@@ -96,54 +167,6 @@ with open('emails_list.csv', 'rt') as emails:
 
 #    for key in ba_info:
 #        print(key + ': ', ba_info[key])
-
-header = ['id', 'email', 'appeared', 'breaches', 'date', 'compromised']
-
-
-with open('breached_accounts.csv', 'wt') as f:
-
-    csv_writer = csv.writer(f)
-
-    csv_writer.writerow(header) # write header
-
-    for ba, ba_info in breached_accounts.items():
-
-        row = []
-
-        # append id
-        row.append(ba)
-
-        # append email
-        row.append(ba_info['Email'])
-
-        # append appeared
-        row.append(ba_info['Appeared'])
-
-
-        # append breaches
-
-        breaches_list = ba_info['Breaches']
-
-        #print(str(breaches_list)[1:-1])
-
-        breaches_list = str(breaches_list)[1:-1]
-
-        row.append(breaches_list)
-
-
-        # append date
-        row.append(ba_info['Date'])
-
-        # append compromised
-
-        compromised_lists = ba_info['Compromised']
-
-        compromised_lists = str(compromised_lists)[1:-1]
-
-        row.append(compromised_lists)
-
-        csv_writer.writerow(row)
-
 
 
         
